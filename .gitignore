@@ -1,2 +1,4 @@
 __pycache__
-/team_key.txt
+
+*.nc
+*.pkl

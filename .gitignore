@@ -1,4 +1,7 @@
 __pycache__
 /team_key.txt
-test.ipynb
 .idea/
+
+*.nc
+*.pkl
+.idea

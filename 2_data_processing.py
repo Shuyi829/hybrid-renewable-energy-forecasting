@@ -15,20 +15,35 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pickle as pkl
 
-# Merge the dwd hornsea nc files
+# open nc file
 dwd_Hornsea1 = xr.open_dataset("data/dwd_icon_eu_hornsea_1_20200920_20231027.nc")
 dwd_Hornsea2 = xr.open_dataset("data/dwd_icon_eu_hornsea_1_20231027_20240108.nc")
+
+ncep_Hornsea1 = xr.open_dataset("data/ncep_gfs_hornsea_1_20200920_20231027.nc")
+ncep_Hornsea2 = xr.open_dataset("data/ncep_gfs_hornsea_1_20231027_20240108.nc")
+
+# rename cols
 dwd_Hornsea2 = dwd_Hornsea2.rename({'reference_time': 'ref_datetime', 'valid_time': 'valid_datetime'})
+ncep_Hornsea2 = ncep_Hornsea2.rename({'reference_time': 'ref_datetime', 'valid_time': 'valid_datetime'})
 
-hornsea1_df = dwd_Hornsea1.to_dataframe()
-hornsea2_df = dwd_Hornsea2.to_dataframe()
+# to dataframe
+dwd_hornsea1_df = dwd_Hornsea1.to_dataframe()
+dwd_hornsea2_df = dwd_Hornsea2.to_dataframe()
+ncep_hornsea1_df = ncep_Hornsea1.to_dataframe()
+ncep_hornsea2_df = ncep_Hornsea2.to_dataframe()
 
-dwd_Hornsea1_features = dwd_Hornsea1["WindSpeed:100"].mean(dim=["latitude","longitude"]).to_dataframe().reset_index()
-dwd_Hornsea1_features["ref_datetime"] = dwd_Hornsea1_features["ref_datetime"].dt.tz_localize("UTC")
-dwd_Hornsea1_features["valid_datetime"] = dwd_Hornsea1_features["ref_datetime"] + pd.TimedeltaIndex(dwd_Hornsea1_features["valid_datetime"],unit="hours")
+# merge dataFrames
+dwd_hornsea_df = pd.concat([dwd_hornsea1_df, dwd_hornsea2_df])
+ncep_hornsea_df = pd.concat([ncep_hornsea1_df, ncep_hornsea2_df])
 
-dwd_Hornsea2_features = dwd_Hornsea2["WindSpeed:100"].mean(dim=["latitude","longitude"]).to_dataframe().reset_index()
-dwd_Hornsea2_features["ref_datetime"] = dwd_Hornsea2_features["ref_datetime"].dt.tz_localize("UTC")
-dwd_Hornsea2_features["valid_datetime"] = dwd_Hornsea2_features["ref_datetime"] + pd.to_timedelta(dwd_Hornsea2_features["valid_datetime"], unit='h')
+# to pkl
+combined_hornsea_df.to_pickle("data/combined_dwd_hornsea_dataframe.pkl")
+combined_ncep_df.to_pickle("data/combined_ncep_hornsea_dataframe.pkl")
 
-dwd_Hornsea1_features = dwd_Hornsea1_features.drop_duplicates(subset='valid_datetime', keep='first')
+
+# merge dataFrames
+combined_hornsea_df = pd.concat([hornsea1_df, hornsea2_df])
+
+
+# 保存合并后的DataFrame为pickle文件
+combined_hornsea_df.to_pickle("data/combined_dwd_hornsea_dataframe.pkl")

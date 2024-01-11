@@ -29,11 +29,25 @@ ncep_pes2_df.index.rename(['ref_datetime','valid_datetime','point'], inplace=Tru
 # Concatenate the DataFrames
 combined_necp_df = pd.concat([ncep_pes1_df,ncep_pes2_df])
 
-# Save the combined DataFrame as a pickle file
-combined_necp_df.to_pickle("data/combined_ncep_pes_dataframe.pkl")
+# Group by 'ref_datetime' and 'valid_datetime' and calculate the mean
+combined_necp_features = combined_necp_df.groupby(['ref_datetime', 'valid_datetime']).mean()
+
+# Reset index and then localize 'ref_datetime' to UTC and adjust 'valid_datetime'
+combined_necp_features.reset_index(inplace=True)
+combined_necp_features["ref_datetime"] = combined_necp_features["ref_datetime"].dt.tz_localize("UTC")
+combined_necp_features["valid_datetime"] = combined_necp_features["ref_datetime"] + pd.TimedeltaIndex(combined_necp_features["valid_datetime"], unit="hours")
+
+# Remove duplicates and keep the last occurrence
+unique_necp_features = combined_necp_features.groupby('valid_datetime').last().reset_index()
+
+# Set 'valid_datetime' as the index
+unique_necp_features.set_index('valid_datetime', inplace=True)
+
+# Save the final DataFrame as a pickle file
+unique_necp_features.to_pickle("data/combined_ncep_pes_dataframe.pkl")
 
 
-# Merge the ncep pes files
+# Merge the dwd pes files
 dwd_pes1 = xr.open_dataset("data/dwd_icon_eu_pes10_20200920_20231027.nc")
 dwd_pes2 = xr.open_dataset("data/dwd_icon_eu_pes10_20231027_20240108.nc")
 

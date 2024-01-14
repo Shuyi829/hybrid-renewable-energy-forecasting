@@ -23,28 +23,36 @@ ncep_pes2 = xr.open_dataset("data/ncep_gfs_pes10_20231027_20240108.nc")
 ncep_pes1_df = ncep_pes1.to_dataframe()
 ncep_pes2_df = ncep_pes2.to_dataframe()
 
-# Standardize column names in hornsea2_df to match hornsea1_df
+# Standardize column names
 ncep_pes2_df.index.rename(['ref_datetime','valid_datetime','point'], inplace=True)
+ncep_pes2_df = ncep_pes2_df.reorder_levels(['ref_datetime', 'valid_datetime', 'point'])
 
 # Concatenate the DataFrames
-combined_necp_df = pd.concat([ncep_pes1_df,ncep_pes2_df])
+combined_ncep_df = pd.concat([ncep_pes1_df,ncep_pes2_df])
 
-# Group by 'ref_datetime' and 'valid_datetime' and calculate the mean
-combined_necp_features = combined_necp_df.groupby(['ref_datetime', 'valid_datetime']).mean()
+# Reset index and keep the 6am ref time
+combined_ncep_df = combined_ncep_df.reset_index()
+combined_ncep_df["ref_datetime"] = pd.to_datetime(combined_ncep_df["ref_datetime"]).dt.tz_localize("UTC")
+combined_ncep_df = combined_ncep_df[combined_ncep_df['ref_datetime'].dt.hour == 6]
 
-# Reset index and then localize 'ref_datetime' to UTC and adjust 'valid_datetime'
-combined_necp_features.reset_index(inplace=True)
-combined_necp_features["ref_datetime"] = combined_necp_features["ref_datetime"].dt.tz_localize("UTC")
-combined_necp_features["valid_datetime"] = combined_necp_features["ref_datetime"] + pd.TimedeltaIndex(combined_necp_features["valid_datetime"], unit="hours")
+# Filter the 'valid_datetime'
+filtered_ncep_df = combined_ncep_df[(combined_ncep_df['valid_datetime'] >= 18) & (combined_ncep_df['valid_datetime'] <= 41)]
 
-# Remove duplicates and keep the last occurrence
-unique_necp_features = combined_necp_features.groupby('valid_datetime').last().reset_index()
+filtered_ncep_df = filtered_ncep_df.copy()
+filtered_ncep_df['valid_datetime'] = filtered_ncep_df['valid_datetime'].astype(int)
 
-# Set 'valid_datetime' as the index
-unique_necp_features.set_index('valid_datetime', inplace=True)
+# Add the 'valid_datetime' as hours to 'ref_datetime' to get the datetime
+filtered_ncep_df['datetime'] = filtered_ncep_df['ref_datetime'] + pd.to_timedelta(filtered_ncep_df['valid_datetime'], unit='H')
+
+# Set datetime as the index
+filtered_ncep_df.set_index('datetime', inplace=True)
+
+# Drop the 'valid_datetime' column from the DataFrame
+filtered_ncep_df = filtered_ncep_df.drop(columns=['valid_datetime'])
 
 # Save the final DataFrame as a pickle file
-unique_necp_features.to_pickle("data/combined_ncep_pes_dataframe.pkl")
+filtered_ncep_df.to_pickle("data/combined_ncep_pes_dataframe.pkl")
+
 
 
 # Merge the dwd pes files
@@ -54,36 +62,41 @@ dwd_pes2 = xr.open_dataset("data/dwd_icon_eu_pes10_20231027_20240108.nc")
 dwd_pes1_df = dwd_pes1.to_dataframe()
 dwd_pes2_df = dwd_pes2.to_dataframe()
 
-# Standardize column names in hornsea2_df to match hornsea1_df
-dwd_pes2_df.index.rename(['valid_datetime','ref_datetime','point'], inplace=True)
+# Standardize column names
+dwd_pes2_df.index.rename(['ref_datetime','valid_datetime','point'], inplace=True)
+dwd_pes2_df = dwd_pes2_df.reorder_levels(['ref_datetime', 'valid_datetime', 'point'])
 
 # Concatenate the DataFrames
 combined_dwd_df = pd.concat([dwd_pes1_df,dwd_pes2_df])
 
+# Reset index and keep the 6am ref time
+combined_dwd_df = combined_dwd_df.reset_index()
+combined_dwd_df["ref_datetime"] = pd.to_datetime(combined_dwd_df["ref_datetime"]).dt.tz_localize("UTC")
+combined_dwd_df = combined_dwd_df[combined_dwd_df['ref_datetime'].dt.hour == 6]
+
+# Filter the 'valid_datetime'
+filtered_dwd_df = combined_dwd_df[(combined_dwd_df['valid_datetime'] >= 18) & (combined_dwd_df['valid_datetime'] <= 41)]
+
+filtered_dwd_df = filtered_dwd_df.copy()
+filtered_dwd_df['valid_datetime'] = filtered_dwd_df['valid_datetime'].astype(int)
+
+# Add the 'valid_datetime' as hours to 'ref_datetime' to get the datetime
+filtered_dwd_df['datetime'] = filtered_dwd_df['ref_datetime'] + pd.to_timedelta(filtered_dwd_df['valid_datetime'], unit='H')
+
+# Set datetime as the index
+filtered_dwd_df.set_index('datetime', inplace=True)
+
+# Drop the 'valid_datetime' column from the DataFrame
+filtered_dwd_df = filtered_dwd_df.drop(columns=['valid_datetime'])
+
 # Save the combined DataFrame as a pickle file
-combined_dwd_df.to_pickle("data/combined_dwd_pes_dataframe.pkl")
+filtered_dwd_df.to_pickle("data/combined_dwd_pes_dataframe.pkl")
 
 
 
 
 
-# dwd_Hornsea1 = xr.open_dataset("data/dwd_icon_eu_hornsea_1_20200920_20231027.nc")
-# dwd_Hornsea1_features = dwd_Hornsea1["WindSpeed:100"].mean(dim=["latitude","longitude"]).to_dataframe().reset_index()
-# dwd_Hornsea1_features["ref_datetime"] = dwd_Hornsea1_features["ref_datetime"].dt.tz_localize("UTC")
-# dwd_Hornsea1_features["valid_datetime"] = dwd_Hornsea1_features["ref_datetime"] + pd.TimedeltaIndex(dwd_Hornsea1_features["valid_datetime"],unit="hours")
-#
-# dwd_solar = xr.open_dataset("data/dwd_icon_eu_pes10_20200920_20231027.nc")
-# dwd_solar_features = dwd_solar["SolarDownwardRadiation"].mean(dim="point").to_dataframe().reset_index()
-# dwd_solar_features["ref_datetime"] = dwd_solar_features["ref_datetime"].dt.tz_localize("UTC")
-# dwd_solar_features["valid_datetime"] = dwd_solar_features["ref_datetime"] + pd.TimedeltaIndex(dwd_solar_features["valid_datetime"],unit="hours")
-#
-# energy_data = pd.read_csv("data/Energy_Data_20200920_20231027.csv")
-# energy_data["dtm"] = pd.to_datetime(energy_data["dtm"])
-# energy_data["Wind_MWh_credit"] = 0.5*energy_data["Wind_MW"] - energy_data["boa_MWh"]
-# energy_data["Solar_MWh_credit"] = 0.5*energy_data["Solar_MW"]
-#
-#
-#
+
 # # Test API
 # rebase_api_client = comp_utils.RebaseAPI(api_key = open("team_key.txt").read())
 #

@@ -52,7 +52,7 @@ filtered_ncep_df = filtered_ncep_df.drop(columns=['ref_datetime','valid_datetime
 filtered_ncep_df = filtered_ncep_df.add_suffix('_ncep')
 
 # Save the final DataFrame as a pickle file
-filtered_ncep_df.to_pickle("data/combined_ncep_pes_dataframe.pkl")
+filtered_ncep_df.to_pickle("data/ncep_pes.pkl")
 
 
 
@@ -92,10 +92,15 @@ filtered_dwd_df = filtered_dwd_df.drop(columns=['ref_datetime','valid_datetime']
 filtered_dwd_df = filtered_dwd_df.add_suffix('_dwd')
 
 # Save the combined DataFrame as a pickle file
-filtered_dwd_df.to_pickle("data/combined_dwd_pes_dataframe.pkl")
+filtered_dwd_df.to_pickle("data/dwd_pes.pkl")
 
-
-
+# Load the energy
+energy_data = pd.read_csv("data/Energy_Data_20200920_20231027.csv")
+energy_data["datetime"] = pd.to_datetime(energy_data["dtm"])
+energy_data["Wind_MWh_credit"] = 0.5*energy_data["Wind_MW"] - energy_data["boa_MWh"]
+energy_data["Solar_MWh_credit"] = 0.5*energy_data["Solar_MW"]
+energy_data_subset = energy_data[['datetime','Wind_MWh_credit', 'Solar_MWh_credit']]
+energy_data_subset.to_pickle("data/y_energy.pkl")
 
 
 

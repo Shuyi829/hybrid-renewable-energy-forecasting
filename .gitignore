@@ -1,7 +1,7 @@
 __pycache__
-/team_key.txt
 .idea/
 
 *.nc
 *.pkl
-.idea
+.idea/misc.xml
+.idea/misc.xml

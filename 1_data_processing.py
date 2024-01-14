@@ -45,10 +45,11 @@ filtered_ncep_df['valid_datetime'] = filtered_ncep_df['valid_datetime'].astype(i
 filtered_ncep_df['datetime'] = filtered_ncep_df['ref_datetime'] + pd.to_timedelta(filtered_ncep_df['valid_datetime'], unit='H')
 
 # Set datetime as the index
-filtered_ncep_df.set_index('datetime', inplace=True)
+filtered_ncep_df.set_index(['datetime','point', 'latitude', 'longitude'], inplace=True)
 
 # Drop the 'valid_datetime' column from the DataFrame
-filtered_ncep_df = filtered_ncep_df.drop(columns=['valid_datetime'])
+filtered_ncep_df = filtered_ncep_df.drop(columns=['ref_datetime','valid_datetime'])
+filtered_ncep_df = filtered_ncep_df.add_suffix('_ncep')
 
 # Save the final DataFrame as a pickle file
 filtered_ncep_df.to_pickle("data/combined_ncep_pes_dataframe.pkl")
@@ -84,10 +85,11 @@ filtered_dwd_df['valid_datetime'] = filtered_dwd_df['valid_datetime'].astype(int
 filtered_dwd_df['datetime'] = filtered_dwd_df['ref_datetime'] + pd.to_timedelta(filtered_dwd_df['valid_datetime'], unit='H')
 
 # Set datetime as the index
-filtered_dwd_df.set_index('datetime', inplace=True)
+filtered_dwd_df.set_index(['datetime','point', 'latitude', 'longitude'], inplace=True)
 
 # Drop the 'valid_datetime' column from the DataFrame
-filtered_dwd_df = filtered_dwd_df.drop(columns=['valid_datetime'])
+filtered_dwd_df = filtered_dwd_df.drop(columns=['ref_datetime','valid_datetime'])
+filtered_dwd_df = filtered_dwd_df.add_suffix('_dwd')
 
 # Save the combined DataFrame as a pickle file
 filtered_dwd_df.to_pickle("data/combined_dwd_pes_dataframe.pkl")

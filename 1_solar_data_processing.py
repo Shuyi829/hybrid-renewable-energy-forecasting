@@ -1,12 +1,6 @@
 from processors import *
 
-# Load the energy data as y variable
-energy_data = pd.read_csv("data/Energy_Data_20200920_20231027.csv")
-energy_data["datetime"] = pd.to_datetime(energy_data["dtm"])
-energy_data["Wind_MWh_credit"] = 0.5*energy_data["Wind_MW"] - energy_data["boa_MWh"]
-energy_data["Solar_MWh_credit"] = 0.5*energy_data["Solar_MW"]
-energy_data_subset = energy_data[['datetime','Wind_MWh_credit', 'Solar_MWh_credit']]
-energy_data_subset.to_pickle("data/y_energy.pkl")
+
 
 # Load the solar data
 ncep_files = ["data/ncep_gfs_pes10_20200920_20231027.nc", "data/ncep_gfs_pes10_20231027_20240108.nc"]

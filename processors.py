@@ -3,7 +3,6 @@ import xarray as xr
 import numpy as np
 from scipy.spatial.distance import cdist
 
-
 def process_dataset(file_paths, suffix, dataset_type):
     # Load and concatenate datasets
     datasets = [xr.open_dataset(path).to_dataframe() for path in file_paths]
@@ -33,10 +32,16 @@ def process_dataset(file_paths, suffix, dataset_type):
 
     combined_df = combined_df.drop(columns=['ref_datetime', 'valid_datetime']).add_suffix(suffix)
 
-    # Save the final DataFrame
-    combined_df.to_pickle(f"data/{dataset_type}{suffix}.pkl")
+    # # Save the final DataFrame
+    # combined_df.to_pickle(f"data/{dataset_type}{suffix}.pkl")
 
     return combined_df
+
+
+def pivot_wider(df):
+    df['point1'] = np.array([r[1] for r in df.index])
+    new_df = pd.pivot_table(df, index='datetime', columns='point1', values=df.columns)
+    return new_df
 
 
 # def find_nearest(group, missing_coords, all_coords):

@@ -1,5 +1,8 @@
 import pandas as pd
 import xarray as xr
+import numpy as np
+from scipy.spatial.distance import cdist
+
 
 def process_dataset(file_paths, suffix, dataset_type):
     # Load and concatenate datasets
@@ -34,3 +37,44 @@ def process_dataset(file_paths, suffix, dataset_type):
     combined_df.to_pickle(f"data/{dataset_type}{suffix}.pkl")
 
     return combined_df
+
+
+# def find_nearest(group, missing_coords, all_coords):
+#     """
+#     在同一时间戳下，找到离缺失数据最近的非空数据点。
+#     group: 当前时间戳下的数据分组
+#     missing_coords: 缺失数据点的经纬度
+#     all_coords: 当前分组中所有数据点的经纬度
+#     """
+#     # 计算距离并找到最近的非空数据点
+#     distances = cdist([missing_coords], all_coords)
+#     nearest_idx = distances.argmin()
+
+#     return group.iloc[nearest_idx]
+
+# def fill_with_nearest(df):
+#     # 对DataFrame按照时间戳分组
+#     grouped = df.groupby(level=0)
+
+#     # 初始化一个空的DataFrame用于保存结果
+#     filled_df = pd.DataFrame()
+
+#     # 遍历每个时间戳分组
+#     for name, group in grouped:
+#         # 获取该组内所有的经纬度
+#         coords = group.index.get_level_values(1, 2).values  # 获取 latitude 和 longitude
+
+#         # 找出缺失值的索引
+#         missing_indices = group[group.isnull().any(axis=1)].index
+
+#         # 对每个缺失值应用查找最近邻居并填充的逻辑
+#         for idx in missing_indices:
+#             nearest_row = find_nearest(group, coords[idx], coords)
+#             df.loc[idx] = nearest_row
+
+#         # 将填充后的数据追加到结果DataFrame
+#         filled_df = filled_df.append(group)
+
+#     return filled_df
+# # 应用函数
+# filled_df = fill_with_nearest(wind_dwd_df)

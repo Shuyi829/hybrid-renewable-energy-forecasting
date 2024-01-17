@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 solar_ncep = pd.read_pickle("data/solar_ncep.pkl")
 x = pd.read_pickle("data/solar_dwd.pkl")
-y = pd.read_pickle("data/y_energy.pkl")
+y = pd.read_pickle("data/y_solar.pkl")
 y = y.iloc[:, 1]
 # df = pd.merge(solar_dwd, solar_ncep, left_index=True, right_index=True, how='outer')
 
@@ -24,16 +24,15 @@ column_indices = {name: i for i, name in enumerate(x.columns)}
 n = len(x)
 num_features = x.shape[1]
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, shuffle=False)
-
-
 def pivot_wider(df):
     df['point1'] = np.array([r[1] for r in df.index])
     new_df = pd.pivot_table(df, index='datetime', columns='point1', values=df.columns)
     return new_df
 
-x_train = pivot_wider(x_train)
-x_test = pivot_wider(x_test)
+x = pivot_wider(x)
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, shuffle=False)
+
 
 # Standardization.
 x_scaler = StandardScaler()
@@ -48,7 +47,7 @@ y_train_std = pd.DataFrame(y_train_std, columns=y_train.columns, index=y_train.i
 y_test_std = y_scaler.transform(y_test)
 y_test_std = pd.DataFrame(y_test_std, columns=y_test.columns, index=y_test.index)
 
-# pd.to_pickle([x_train_std, y_train_std, x_test_std, y_test_std],
-#              "raw/1_data_std.pkl")
-# pd.to_pickle([x_scaler, y_scaler], 'raw/1_scaler.pkl')
+pd.to_pickle([x_train_std, y_train_std, x_test_std, y_test_std],
+             "raw/4_data_std.pkl")
+pd.to_pickle([x_scaler, y_scaler], 'raw/4_scaler.pkl')
 

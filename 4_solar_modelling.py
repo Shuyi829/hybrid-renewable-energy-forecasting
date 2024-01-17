@@ -1,91 +1,54 @@
 import os
 import datetime
 
-import IPython
-import IPython.display
+# import IPython
+# import IPython.display
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import tensorflow as tf
-
-mpl.rcParams['figure.figsize'] = (8, 6)
-mpl.rcParams['axes.grid'] = False
+# import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 
 solar_ncep = pd.read_pickle("data/solar_ncep.pkl")
-solar_dwd = pd.read_pickle("data/solar_dwd.pkl")
-df = pd.merge(solar_dwd, solar_ncep, left_index=True, right_index=True, how='outer')
+x = pd.read_pickle("data/solar_dwd.pkl")
+y = pd.read_pickle("data/y_energy.pkl")
+y = y.iloc[:, 1]
+# df = pd.merge(solar_dwd, solar_ncep, left_index=True, right_index=True, how='outer')
 
 # Split the data
-column_indices = {name: i for i, name in enumerate(df.columns)}
-n = len(df)
-train_df = df[0:int(n*0.7)]
-val_df = df[int(n*0.7):int(n*0.9)]
-test_df = df[int(n*0.9):]
-num_features = df.shape[1]
+column_indices = {name: i for i, name in enumerate(x.columns)}
+n = len(x)
+num_features = x.shape[1]
 
-# Normalize the data
-train_mean = train_df.mean()
-train_std = train_df.std()
-
-train_df = (train_df - train_mean) / train_std
-val_df = (val_df - train_mean) / train_std
-test_df = (test_df - train_mean) / train_std
-
-class WindowGenerator():
-  def __init__(self, input_width, label_width, shift,
-               train_df=train_df, val_df=val_df, test_df=test_df,
-               label_columns=None):
-    # Store the raw data.
-    self.train_df = train_df
-    self.val_df = val_df
-    self.test_df = test_df
-
-    # Work out the label column indices.
-    self.label_columns = label_columns
-    if label_columns is not None:
-      self.label_columns_indices = {name: i for i, name in
-                                    enumerate(label_columns)}
-    self.column_indices = {name: i for i, name in
-                           enumerate(train_df.columns)}
-
-    # Work out the window parameters.
-    self.input_width = input_width
-    self.label_width = label_width
-    self.shift = shift
-
-    self.total_window_size = input_width + shift
-
-    self.input_slice = slice(0, input_width)
-    self.input_indices = np.arange(self.total_window_size)[self.input_slice]
-
-    self.label_start = self.total_window_size - self.label_width
-    self.labels_slice = slice(self.label_start, None)
-    self.label_indices = np.arange(self.total_window_size)[self.labels_slice]
-
-  def __repr__(self):
-    return '\n'.join([
-        f'Total window size: {self.total_window_size}',
-        f'Input indices: {self.input_indices}',
-        f'Label indices: {self.label_indices}',
-        f'Label column name(s): {self.label_columns}'])
+x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, shuffle=False)
 
 
-def split_window(self, features):
-  inputs = features[:, self.input_slice, :]
-  labels = features[:, self.labels_slice, :]
-  if self.label_columns is not None:
-      labels = tf.stack(
-          [labels[:, :, self.column_indices[name]] for name in self.label_columns],
-          axis=-1)
+def pivot_wider(df):
+    df['point1'] = np.array([r[1] for r in df.index])
+    new_df = pd.pivot_table(df, index='datetime', columns='point1', values=df.columns)
+    return new_df
 
-  # Slicing doesn't preserve static shape information, so set the shapes
-  # manually. This way the `tf.data.Datasets` are easier to inspect.
-  inputs.set_shape([None, self.input_width, None])
-  labels.set_shape([None, self.label_width, None])
+x_train = pivot_wider(x_train)
+x_test = pivot_wider(x_test)
 
-  return inputs, labels
+# Standardization.
+x_scaler = StandardScaler()
+x_train_std = x_scaler.fit_transform(x_train)
+x_train_std = pd.DataFrame(x_train_std, columns=x_train.columns, index=x_train.index)
+x_test_std = x_scaler.transform(x_test)
+x_test_std = pd.DataFrame(x_test_std, columns=x_test.columns, index=x_test.index)
 
-WindowGenerator.split_window = split_window
+y_scaler = StandardScaler()
+y_train_std = y_scaler.fit_transform(y_train)
+y_train_std = pd.DataFrame(y_train_std, columns=y_train.columns, index=y_train.index)
+y_test_std = y_scaler.transform(y_test)
+y_test_std = pd.DataFrame(y_test_std, columns=y_test.columns, index=y_test.index)
+
+# pd.to_pickle([x_train_std, y_train_std, x_test_std, y_test_std],
+#              "raw/1_data_std.pkl")
+# pd.to_pickle([x_scaler, y_scaler], 'raw/1_scaler.pkl')
+

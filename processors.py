@@ -38,10 +38,6 @@ def process_dataset(file_paths, suffix, dataset_type):
     return combined_df
 
 
-def pivot_wider(df):
-    df['point1'] = np.array([r[1] for r in df.index])
-    new_df = pd.pivot_table(df, index='datetime', columns='point1', values=df.columns)
-    return new_df
 
 
 # def find_nearest(group, missing_coords, all_coords):
